@@ -4,6 +4,8 @@ from supernovacontroller.sequential import SupernovaDevice
 from definitions import *
 from ctypes import *
 
+# The read method needs to read two dummy bytes before the actual data
+# as specified in the BMI323 datasheet
 OFFSET_FOR_DUMMY_BYTES = 2
 
 def find_matching_item(data, target_pid):
@@ -28,9 +30,6 @@ class BMI323:
     gyro_filter_bw = BMI323_GYRO_FILTER_BW.ODR_4.value
     gyro_fs = BMI323_GYRO_FS.FS_250dps.value
     gyro_odr = BMI323_GYRO_ODR.GODR_100Hz.value
-    
-    # Sensor status
-    status = None
 
     # Calibration
     accel_bias = None
@@ -49,29 +48,41 @@ class BMI323:
         
         self.address = bmi_device["dynamic_address"]
 
-    def calculate_resolution(self):
-        # Calculate resolution
+    def calculate_resolutions(self):
+        '''
+        Calculate the resolutions of the sensor based on the current configuration.
+        Use the respective full scale values and the number of bits (16) to calculate the resolutions.
+        '''
         a_res = BMI323_ACCEL_FS_VALUES[self.accel_fs] / 32768.0
         g_res = BMI323_GYRO_FS_VALUES[self.gyro_fs] / 32768.0
 
         return (a_res, g_res)
     
     def init_device(self):
-        # Set accel full scale and data rate
+        '''
+        Initialize the sensor with the current configuration. Uses two words of 16 bits to write the
+        configuration, one for the accelerometer and one for the gyroscope.
+        '''
+        # Set accelerometer configuration
         BMI323_ACCEL_CONFIG_LB = self.accel_filter_bw | self.accel_fs | self.accel_odr
         BMI323_ACCEL_CONFIG_HB = self.accel_mode | self.accel_avg_num
         BMI323_ACCEL_CONFIG = [BMI323_ACCEL_CONFIG_LB, BMI323_ACCEL_CONFIG_HB]
         self.i3c.write(self.address, self.i3c.TransferMode.I3C_SDR, [BMI323_ACCEL_CONFIG_REG], BMI323_ACCEL_CONFIG)
         
-        # Set gyro full scale and data rate
+        # Set gyroscope configuration
         BMI323_GYRO_CONFIG_LB = self.gyro_filter_bw | self.gyro_fs | self.gyro_odr
         BMI323_GYRO_CONFIG_HB = self.gyro_mode | self.gyro_avg_num
         BMI323_GYRO_CONFIG = [BMI323_GYRO_CONFIG_LB, BMI323_GYRO_CONFIG_HB]
         self.i3c.write(self.address, self.i3c.TransferMode.I3C_SDR, [BMI323_GYRO_CONFIG_REG], BMI323_GYRO_CONFIG)
-
-        self.accel_res, self.gyro_res = self.calculate_resolution()
+        
+        # Calculate resolutions
+        self.accel_res, self.gyro_res = self.calculate_resolutions()
 
     def calibrate(self):
+        '''
+        Calibrate the sensor by reading 128 samples and calculating the average value.
+        The average value is then used as the bias for the sensor.
+        '''
         sum_values = [0, 0, 0, 0, 0, 0]
         accel_bias = [0, 0, 0]
         gyro_bias = [0, 0, 0]
@@ -106,11 +117,17 @@ class BMI323:
         self.gyro_bias = gyro_bias
 
     def _read_data(self):
+        '''
+        Read the data from the sensor. The data is read in a single transaction starting from the
+        accelerometer data X register. The data is then converted to signed 16-bit integers.
+        '''
+        # The three components of the accelerometer and gyroscope are 2-bytes length each
         READ_LEN = 12
 
         # Read data
         (_, raw_data) = self.i3c.read(self.address, self.i3c.TransferMode.I3C_SDR, [BMI323_ACCEL_DATA_X], OFFSET_FOR_DUMMY_BYTES + READ_LEN)
-
+        
+        # Convert data to signed 16-bit integers
         imu_data = [0, 0, 0, 0, 0, 0]
         for i in range(len(imu_data)):
             imu_data[i] = c_int16((raw_data[OFFSET_FOR_DUMMY_BYTES + 2*i + 1] << 8) | raw_data[OFFSET_FOR_DUMMY_BYTES + 2*i]).value
@@ -118,8 +135,13 @@ class BMI323:
         return imu_data
 
     def read(self):
+        '''
+        Read the data from the sensor and convert it to the correct units.
+        '''
+        # Read imu data
         imu_data = self._read_data()
-            
+        
+        # Convert data to correct units
         ax = imu_data[0]*self.accel_res - self.accel_bias[0]
         ay = imu_data[1]*self.accel_res - self.accel_bias[1]
         az = imu_data[2]*self.accel_res - self.accel_bias[2]
