@@ -22,9 +22,6 @@ class LSM6DSV:
     gyro_mode = LSM6DSV_GYRO_OP_MODES.HIGH_PERFORMANCE.value
     gyro_odr = LSM6DSV_GYRO_ODR.GODR_240Hz.value
     gyro_fs = LSM6DSV_GYRO_FS.FS_250dps.value
-    
-    # Sensor status
-    status = None
 
     # Calibration
     accel_bias = None
@@ -44,28 +41,40 @@ class LSM6DSV:
         self.address = lmi_device["dynamic_address"]
 
     def calculate_resolution(self):
-        # Calculate resolution
+        '''
+        Calculate the resolutions of the sensor based on the current configuration.
+        Use the respective full scale values and the number of bits (16) to calculate the resolutions.
+        '''
         a_res = LSM6DSV_ACCEL_FS_VALUES[self.accel_fs] / 32768.0
         g_res = LSM6DSV_GYRO_FS_VALUES[self.gyro_fs] / 32768.0
 
         return (a_res, g_res)
     
     def init_device(self):
-        # Set accel full scale and data rate
+        '''
+        Initialize the sensor with the current configuration. Uses two configuration registers of
+        1 byte each for both the accelerometer and the gyroscope.
+        '''
+        # Set accelerometer configuration
         LSM6DSV_ACCEL_CONFIG_1 = [self.accel_mode | self.accel_odr]
         LSM6DSV_ACCEL_CONFIG_2 = [self.accel_fs]
         self.i3c.write(self.address, self.i3c.TransferMode.I3C_SDR, [LSM6DSV_ACCEL_CONFIG_1_REG], LSM6DSV_ACCEL_CONFIG_1)
         self.i3c.write(self.address, self.i3c.TransferMode.I3C_SDR, [LSM6DSV_ACCEL_CONFIG_2_REG], LSM6DSV_ACCEL_CONFIG_2)
 
-        # Set gyro full scale and data rate
+        # Set gyroscope configuration
         LSM6DSV_GYRO_CONFIG_1 = [self.gyro_mode | self.gyro_odr]
         LSM6DSV_GYRO_CONFIG_2 = [self.gyro_fs]
         self.i3c.write(self.address, self.i3c.TransferMode.I3C_SDR, [LSM6DSV_GYRO_CONFIG_1_REG], LSM6DSV_GYRO_CONFIG_1)
         self.i3c.write(self.address, self.i3c.TransferMode.I3C_SDR, [LSM6DSV_GYRO_CONFIG_2_REG], LSM6DSV_GYRO_CONFIG_2)
 
+        # Calculate resolutions
         self.accel_res, self.gyro_res = self.calculate_resolution()
 
     def calibrate(self):
+        '''
+        Calibrate the sensor by reading 128 samples and calculating the average value.
+        The average value is then used as the bias for the sensor.
+        '''
         sum_values = [0, 0, 0, 0, 0, 0]
         accel_bias = [0, 0, 0]
         gyro_bias = [0, 0, 0]
@@ -100,11 +109,17 @@ class LSM6DSV:
         self.gyro_bias = gyro_bias
 
     def _read_data(self):
+        '''
+        Read the data from the sensor. The data is read in a single transaction starting from the
+        gyroscope data X register. The data is then converted to signed 16-bit integers.
+        '''
+        # The three components of the accelerometer and gyroscope are 2-bytes length each
         READ_LEN = 12
 
         # Read data
         (_, raw_data) = self.i3c.read(self.address, self.i3c.TransferMode.I3C_SDR, [LSM6DSV_GYRO_DATA_X], READ_LEN)
 
+        # Convert data to signed 16-bit integers
         imu_data = [0, 0, 0, 0, 0, 0]
         for i in range(len(imu_data)):
             imu_data[i] = c_int16((raw_data[2*i + 1] << 8) | raw_data[2*i]).value
@@ -112,8 +127,13 @@ class LSM6DSV:
         return imu_data
 
     def read(self):
+        '''
+        Read the data from the sensor and convert it to the correct units.
+        '''
+        # Read imu data
         imu_data = self._read_data()
-            
+
+        # Convert data to correct units   
         gx = imu_data[0]*self.gyro_res - self.gyro_bias[0]
         gy = imu_data[1]*self.gyro_res - self.gyro_bias[1]
         gz = imu_data[2]*self.gyro_res - self.gyro_bias[2]
