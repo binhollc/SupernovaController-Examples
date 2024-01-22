@@ -40,15 +40,33 @@ class LSM6DSV:
         
         self.address = lmi_device["dynamic_address"]
 
-    def calculate_resolution(self):
+    def _calculate_resolution(self):
         '''
         Calculate the resolutions of the sensor based on the current configuration.
         Use the respective full scale values and the number of bits (16) to calculate the resolutions.
         '''
-        a_res = LSM6DSV_ACCEL_FS_VALUES[self.accel_fs] / 32768.0
-        g_res = LSM6DSV_GYRO_FS_VALUES[self.gyro_fs] / 32768.0
+        a_res = LSM6DSV_ACCEL_FS_VALUES[self.accel_fs] / LSM6DSV_ACCEL_RESOLUTION
+        g_res = LSM6DSV_GYRO_FS_VALUES[self.gyro_fs] / LSM6DSV_GYRO_RESOLUTION
 
         return (a_res, g_res)
+    
+    def _read_data(self):
+        '''
+        Read the data from the sensor. The data is read in a single transaction starting from the
+        gyroscope data X register. The data is then converted to signed 16-bit integers.
+        '''
+        # The three components of the accelerometer and gyroscope are 2-bytes length each
+        READ_LEN = 12
+
+        # Read data
+        (_, raw_data) = self.i3c.read(self.address, self.i3c.TransferMode.I3C_SDR, [LSM6DSV_GYRO_DATA_X], READ_LEN)
+
+        # Convert data to signed 16-bit integers
+        imu_data = [0, 0, 0, 0, 0, 0]
+        for i in range(len(imu_data)):
+            imu_data[i] = c_int16((raw_data[2*i + 1] << 8) | raw_data[2*i]).value
+        
+        return imu_data
     
     def init_device(self):
         '''
@@ -68,7 +86,7 @@ class LSM6DSV:
         self.i3c.write(self.address, self.i3c.TransferMode.I3C_SDR, [LSM6DSV_GYRO_CONFIG_2_REG], LSM6DSV_GYRO_CONFIG_2)
 
         # Calculate resolutions
-        self.accel_res, self.gyro_res = self.calculate_resolution()
+        self.accel_res, self.gyro_res = self._calculate_resolution()
 
     def calibrate(self):
         '''
@@ -107,24 +125,6 @@ class LSM6DSV:
 
         self.accel_bias = accel_bias
         self.gyro_bias = gyro_bias
-
-    def _read_data(self):
-        '''
-        Read the data from the sensor. The data is read in a single transaction starting from the
-        gyroscope data X register. The data is then converted to signed 16-bit integers.
-        '''
-        # The three components of the accelerometer and gyroscope are 2-bytes length each
-        READ_LEN = 12
-
-        # Read data
-        (_, raw_data) = self.i3c.read(self.address, self.i3c.TransferMode.I3C_SDR, [LSM6DSV_GYRO_DATA_X], READ_LEN)
-
-        # Convert data to signed 16-bit integers
-        imu_data = [0, 0, 0, 0, 0, 0]
-        for i in range(len(imu_data)):
-            imu_data[i] = c_int16((raw_data[2*i + 1] << 8) | raw_data[2*i]).value
-        
-        return imu_data
 
     def read(self):
         '''
@@ -174,8 +174,6 @@ def main():
     fig.subplots_adjust(hspace=0.5)
     fig.suptitle('Supernova with LSM6DSV Device Demo', fontsize=16)
     plt.get_current_fig_manager().set_window_title("Sensor Data Visualization")
-
-    # Set static titles for the subplots
 
     # Initialize lists to store the data
     times = []
