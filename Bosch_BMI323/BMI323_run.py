@@ -48,15 +48,32 @@ class BMI323:
         
         self.address = bmi_device["dynamic_address"]
 
-    def calculate_resolutions(self):
+    def _calculate_resolutions(self):
         '''
         Calculate the resolutions of the sensor based on the current configuration.
         Use the respective full scale values and the number of bits (16) to calculate the resolutions.
         '''
-        a_res = BMI323_ACCEL_FS_VALUES[self.accel_fs] / 32768.0
-        g_res = BMI323_GYRO_FS_VALUES[self.gyro_fs] / 32768.0
-
+        a_res = BMI323_ACCEL_FS_VALUES[self.accel_fs] / BMI323_ACCEL_RESOLUTION
+        g_res = BMI323_GYRO_FS_VALUES[self.gyro_fs] / BMI323_GYRO_RESOLUTION
         return (a_res, g_res)
+
+    def _read_data(self):
+        '''
+        Read the data from the sensor. The data is read in a single transaction starting from the
+        accelerometer data X register. The data is then converted to signed 16-bit integers.
+        '''
+        # The three components of the accelerometer and gyroscope are 2-bytes length each
+        READ_LEN = 12
+
+        # Read data
+        (_, raw_data) = self.i3c.read(self.address, self.i3c.TransferMode.I3C_SDR, [BMI323_ACCEL_DATA_X], OFFSET_FOR_DUMMY_BYTES + READ_LEN)
+        
+        # Convert data to signed 16-bit integers
+        imu_data = [0, 0, 0, 0, 0, 0]
+        for i in range(len(imu_data)):
+            imu_data[i] = c_int16((raw_data[OFFSET_FOR_DUMMY_BYTES + 2*i + 1] << 8) | raw_data[OFFSET_FOR_DUMMY_BYTES + 2*i]).value
+        
+        return imu_data
     
     def init_device(self):
         '''
@@ -76,7 +93,7 @@ class BMI323:
         self.i3c.write(self.address, self.i3c.TransferMode.I3C_SDR, [BMI323_GYRO_CONFIG_REG], BMI323_GYRO_CONFIG)
         
         # Calculate resolutions
-        self.accel_res, self.gyro_res = self.calculate_resolutions()
+        self.accel_res, self.gyro_res = self._calculate_resolutions()
 
     def calibrate(self):
         '''
@@ -115,24 +132,6 @@ class BMI323:
 
         self.accel_bias = accel_bias
         self.gyro_bias = gyro_bias
-
-    def _read_data(self):
-        '''
-        Read the data from the sensor. The data is read in a single transaction starting from the
-        accelerometer data X register. The data is then converted to signed 16-bit integers.
-        '''
-        # The three components of the accelerometer and gyroscope are 2-bytes length each
-        READ_LEN = 12
-
-        # Read data
-        (_, raw_data) = self.i3c.read(self.address, self.i3c.TransferMode.I3C_SDR, [BMI323_ACCEL_DATA_X], OFFSET_FOR_DUMMY_BYTES + READ_LEN)
-        
-        # Convert data to signed 16-bit integers
-        imu_data = [0, 0, 0, 0, 0, 0]
-        for i in range(len(imu_data)):
-            imu_data[i] = c_int16((raw_data[OFFSET_FOR_DUMMY_BYTES + 2*i + 1] << 8) | raw_data[OFFSET_FOR_DUMMY_BYTES + 2*i]).value
-        
-        return imu_data
 
     def read(self):
         '''
@@ -182,8 +181,6 @@ def main():
     fig.subplots_adjust(hspace=0.5)
     fig.suptitle('Supernova with BMI323 Device Demo', fontsize=16)
     plt.get_current_fig_manager().set_window_title("Sensor Data Visualization")
-
-    # Set static titles for the subplots
 
     # Initialize lists to store the data
     times = []
