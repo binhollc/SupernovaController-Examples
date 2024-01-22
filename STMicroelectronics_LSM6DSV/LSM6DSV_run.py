@@ -217,6 +217,7 @@ def main():
         ax1.plot(times, acc_data['z'], label='Z')
         ax1.legend()
         ax1.set_title('Accelerometer Data')
+        ax1.set_ylabel('Acceleration (g)')
 
         # Plot gyroscope data
         ax2.cla()
@@ -225,6 +226,7 @@ def main():
         ax2.plot(times, gyro_data['z'], label='Z')
         ax2.legend()
         ax2.set_title('Gyroscope Data')
+        ax2.set_ylabel('Angular Velocity (dps)')
 
         plt.pause(0.1)
 
