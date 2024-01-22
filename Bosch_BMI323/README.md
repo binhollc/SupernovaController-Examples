@@ -2,7 +2,7 @@
 
 This folder contains a demonstration project for interfacing with a BMI323 sensor using the Supernova host adapter connected to the I3C bus. The project showcases how to initialize the sensor, read accelerometer and gyroscope data in real-time, and visualize this data using `matplotlib` in Python.
 
-![Sensor_Data_Visualization](https://github.com/binhollc/demo_supernova_icm42605/assets/947449/107e83d5-790f-44d2-81d0-73047f33b08d)
+![Sensor_Data_Visualization](assets/bosch_bmi323_accel_gyro_plot.png)
 
 ## Introduction
 
