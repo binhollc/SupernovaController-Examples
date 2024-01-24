@@ -1,5 +1,8 @@
 from enum import Enum
 
+# Number of samples to be used for calibration
+CALIBRATION_SAMPLES = 180
+
 # Address of the BMI323 Accelerometer Configuration Register
 BMI323_ACCEL_CONFIG_REG = 0x20
 
@@ -59,6 +62,10 @@ class BMI323_ACCEL_ODR(Enum):
 
 # Accelerometer 16 bits symmetric resolution
 BMI323_ACCEL_RESOLUTION = 32768.0
+
+# Accelerometer bias limits in g
+MAX_ACCEL_BIAS = 0.8
+MIN_ACCEL_BIAS = -0.8
 
 # Accelerometer data X register address
 BMI323_ACCEL_DATA_X = 0x03
