@@ -1,6 +1,6 @@
 # Demo Supernova with STMicroelectronics sensor LSM6DSV
 
-This folder contains a demonstration project for interfacing with a LSM6DSV sensor using the Supernova host adapter connected to the I3C bus. The project showcases how to initialize the sensor, read accelerometer and gyroscope data in real-time, and visualize this data using `matplotlib` in Python.
+This folder contains a demonstration project for interfacing with a LSM6DSV sensor using the Supernova host adapter connected to the I3C High Voltage bus. The project showcases how to initialize the sensor, read accelerometer and gyroscope data in real-time, and visualize this data using `matplotlib` in Python.
 
 ![Sensor_Data_Visualization](assets/stmicroelectronics_lsm6dsv_accel_gyro_plot.png)
 
@@ -12,7 +12,7 @@ The project provides a Python script (`LSM6DSV_run.py`) that interfaces with a L
 
 - Python 3.10
 - Supernova host adapter
-- LSM6DSV sensor connected to the I3C bus
+- LSM6DSV sensor connected to the I3C High Voltage bus
 
 ## Installation
 

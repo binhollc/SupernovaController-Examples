@@ -1,5 +1,8 @@
 from enum import Enum
 
+# Number of samples to be used for calibration
+CALIBRATION_SAMPLES = 180
+
 # Address of the LSM6DSV Accelerometer Configuration 1 Register
 LSM6DSV_ACCEL_CONFIG_1_REG = 0x10
 
@@ -49,6 +52,10 @@ LSM6DSV_ACCEL_FS_VALUES = {
 
 # Accelerometer 16 bits symmetric resolution
 LSM6DSV_ACCEL_RESOLUTION = 32768.0
+
+# Accelerometer bias limits in g
+MAX_ACCEL_BIAS = 0.8
+MIN_ACCEL_BIAS = -0.8
 
 # Address of the LSM6DSV Gyroscope Configuration 1 Register
 LSM6DSV_GYRO_CONFIG_1_REG = 0x11

@@ -90,37 +90,38 @@ class LSM6DSV:
 
     def calibrate(self):
         '''
-        Calibrate the sensor by reading 128 samples and calculating the average value.
+        Calibrate the sensor by reading certain number of samples and calculating the average value.
         The average value is then used as the bias for the sensor.
         '''
         sum_values = [0, 0, 0, 0, 0, 0]
         accel_bias = [0, 0, 0]
         gyro_bias = [0, 0, 0]
 
-        for i in range(128):
+        for i in range(CALIBRATION_SAMPLES):
             # Read data
             imu_data = self._read_data()
             for j in range(len(imu_data)):          
                 sum_values[j] += imu_data[j]
 
-        gyro_bias[0] = sum_values[0] * self.gyro_res / 128.0
-        gyro_bias[1] = sum_values[1] * self.gyro_res / 128.0
-        gyro_bias[2] = sum_values[2] * self.gyro_res / 128.0
-        accel_bias[0] = sum_values[3] * self.accel_res / 128.0
-        accel_bias[1] = sum_values[4] * self.accel_res / 128.0
-        accel_bias[2] = sum_values[5] * self.accel_res / 128.0
+        calibration_samples_float = float(CALIBRATION_SAMPLES)
+        gyro_bias[0] = sum_values[0] * self.gyro_res / calibration_samples_float
+        gyro_bias[1] = sum_values[1] * self.gyro_res / calibration_samples_float
+        gyro_bias[2] = sum_values[2] * self.gyro_res / calibration_samples_float
+        accel_bias[0] = sum_values[3] * self.accel_res / calibration_samples_float
+        accel_bias[1] = sum_values[4] * self.accel_res / calibration_samples_float
+        accel_bias[2] = sum_values[5] * self.accel_res / calibration_samples_float
 
-        if accel_bias[0] > 0.8:
+        if accel_bias[0] > MAX_ACCEL_BIAS:
             accel_bias[0] -= 1.0  # Remove gravity from the x-axis accelerometer bias calculation
-        if accel_bias[0] < -0.8:
+        if accel_bias[0] < MIN_ACCEL_BIAS:
             accel_bias[0] += 1.0  # Remove gravity from the x-axis accelerometer bias calculation
-        if accel_bias[1] > 0.8:
+        if accel_bias[1] > MAX_ACCEL_BIAS:
             accel_bias[1] -= 1.0  # Remove gravity from the y-axis accelerometer bias calculation
-        if accel_bias[1] < -0.8:
+        if accel_bias[1] < MIN_ACCEL_BIAS:
             accel_bias[1] += 1.0  # Remove gravity from the y-axis accelerometer bias calculation
-        if accel_bias[2] > 0.8:
+        if accel_bias[2] > MAX_ACCEL_BIAS:
             accel_bias[2] -= 1.0  # Remove gravity from the z-axis accelerometer bias calculation
-        if accel_bias[2] < -0.8:
+        if accel_bias[2] < MIN_ACCEL_BIAS:
             accel_bias[2] += 1.0  # Remove gravity from the z-axis accelerometer bias calculation 
 
         self.accel_bias = accel_bias
