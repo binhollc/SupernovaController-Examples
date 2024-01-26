@@ -40,7 +40,7 @@ class LSM6DSV:
         
         self.address = lmi_device["dynamic_address"]
 
-    def _calculate_resolution(self):
+    def __calculate_resolution(self):
         '''
         Calculate the resolutions of the sensor based on the current configuration.
         Use the respective full scale values and the number of bits (16) to calculate the resolutions.
@@ -50,7 +50,7 @@ class LSM6DSV:
 
         return (a_res, g_res)
     
-    def _read_data(self):
+    def __read_data(self):
         '''
         Read the data from the sensor. The data is read in a single transaction starting from the
         gyroscope data X register. The data is then converted to signed 16-bit integers.
@@ -86,7 +86,7 @@ class LSM6DSV:
         self.i3c.write(self.address, self.i3c.TransferMode.I3C_SDR, [LSM6DSV_GYRO_CONFIG_2_REG], LSM6DSV_GYRO_CONFIG_2)
 
         # Calculate resolutions
-        self.accel_res, self.gyro_res = self._calculate_resolution()
+        self.accel_res, self.gyro_res = self.__calculate_resolution()
 
     def calibrate(self):
         '''
@@ -99,7 +99,7 @@ class LSM6DSV:
 
         for i in range(CALIBRATION_SAMPLES):
             # Read data
-            imu_data = self._read_data()
+            imu_data = self.__read_data()
             for j in range(len(imu_data)):          
                 sum_values[j] += imu_data[j]
 
@@ -132,7 +132,7 @@ class LSM6DSV:
         Read the data from the sensor and convert it to the correct units.
         '''
         # Read imu data
-        imu_data = self._read_data()
+        imu_data = self.__read_data()
 
         # Convert data to correct units   
         gx = imu_data[0]*self.gyro_res - self.gyro_bias[0]

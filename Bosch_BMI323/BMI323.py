@@ -48,7 +48,7 @@ class BMI323:
         
         self.address = bmi_device["dynamic_address"]
 
-    def _calculate_resolutions(self):
+    def __calculate_resolutions(self):
         '''
         Calculate the resolutions of the sensor based on the current configuration.
         Use the respective full scale values and the number of bits (16) to calculate the resolutions.
@@ -57,7 +57,7 @@ class BMI323:
         g_res = BMI323_GYRO_FS_VALUES[self.gyro_fs] / BMI323_GYRO_RESOLUTION
         return (a_res, g_res)
 
-    def _read_data(self):
+    def __read_data(self):
         '''
         Read the data from the sensor. The data is read in a single transaction starting from the
         accelerometer data X register. The data is then converted to signed 16-bit integers.
@@ -93,7 +93,7 @@ class BMI323:
         self.i3c.write(self.address, self.i3c.TransferMode.I3C_SDR, [BMI323_GYRO_CONFIG_REG], BMI323_GYRO_CONFIG)
         
         # Calculate resolutions
-        self.accel_res, self.gyro_res = self._calculate_resolutions()
+        self.accel_res, self.gyro_res = self.__calculate_resolutions()
 
     def calibrate(self):
         '''
@@ -106,7 +106,7 @@ class BMI323:
 
         for i in range(CALIBRATION_SAMPLES):
             # Read data
-            imu_data = self._read_data()
+            imu_data = self.__read_data()
             for j in range(len(imu_data)):          
                 sum_values[j] += imu_data[j]
 
@@ -139,7 +139,7 @@ class BMI323:
         Read the data from the sensor and convert it to the correct units.
         '''
         # Read imu data
-        imu_data = self._read_data()
+        imu_data = self.__read_data()
         
         # Convert data to correct units
         ax = imu_data[0]*self.accel_res - self.accel_bias[0]
