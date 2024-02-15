@@ -11,7 +11,8 @@ def find_matching_item(data, target_pid):
     return None
 
 class LSM6DSV:
-    pid = [0x02, 0x08, 0x00, 0x70, 0x92, 0x0B]
+    pid = [0x0B, 0x92, 0x70, 0x00, 0x08, 0x02]
+    pid = [f"0x{num:02x}" for num in pid]
     address = None
 
     # Sensor configuration
