@@ -16,6 +16,9 @@ def main():
 
     i3c = device.create_interface("i3c.controller")
 
+    # Configure Supernova device as an I3C controller.
+    i3c.controller_init()
+
     i3c.set_parameters(i3c.I3cPushPullTransferRate.PUSH_PULL_12_5_MHZ, i3c.I3cOpenDrainTransferRate.OPEN_DRAIN_4_17_MHZ)
     (success, _) = i3c.init_bus(3300)
 
