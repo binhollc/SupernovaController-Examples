@@ -1,2 +1,2 @@
-supernovacontroller==0.2.0
+supernovacontroller==1.1.0
 matplotlib
