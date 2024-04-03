@@ -15,7 +15,8 @@ def find_matching_item(data, target_pid):
     return None
 
 class BMI323:
-    pid = [0x07, 0x70, 0x10, 0x43, 0x10, 0x00]
+    pid = [0x00, 0x10, 0x43, 0x10, 0x70, 0x07]
+    pid = [f"0x{num:02x}" for num in pid]
     address = None
 
     # Sensor configuration
