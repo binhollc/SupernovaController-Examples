@@ -4,7 +4,7 @@ This folder contains a demonstration project for interfacing with an I2C FRAM us
 
 ## Introduction
 
-The objective of this project is to load a text file, save it into an I2C FRAM memory, read the I2C FRAM, and store the retrieved data into a new text file for content comparison. Communication with the I2C FRAM is achieved using I3C with legacy I2C device compatibility.
+The objective of this project is to load a text file, save it into an I2C FRAM memory in 64-byte chunks, read the I2C FRAM in 250-byte chunks, and store the retrieved data into a new text file for content comparison. Communication with the I2C FRAM is achieved using I3C with legacy I2C device compatibility.
 
 The following flowchart illustrates the process of loading the file and writing the data to the I2C FRAM:
 
